@@ -1,26 +1,54 @@
+
 pipeline {
     agent any
-    tools {
-        // Configure a NodeJS installation named NodeJS-20 in Jenkins.
-        nodejs "NodeJS-20"
-    }
+
     stages {
+        stage('Checkout GitHub') {
+            steps {
+                checkout scm
+            }
+        }
+
+        stage('Check Node.js') {
+            steps {
+                bat 'node --version'
+                bat 'npm --version'
+            }
+        }
+
         stage('Install Dependencies') {
             steps {
-                bat 'npm install'
+                bat 'npm ci'
             }
         }
-        stage('Start API and Run Newman Tests') {
+
+        stage('Start API Server') {
             steps {
-                bat 'start /B cmd /C "npm start"'
-                bat 'timeout /t 5 /nobreak'
-                bat 'npx newman run tests/postman_collection.json --env-var baseUrl=http://localhost:5000'
+                bat 'start "API Server" /B cmd /c "npm start"'
+                bat 'timeout /t 10 /nobreak'
+            }
+        }
+
+        stage('Run API Tests') {
+            steps {
+                bat 'if not exist reports mkdir reports'
+                bat 'npm run test:api:report'
+            }
+        }
+
+        stage('Archive HTML Report') {
+            steps {
+                archiveArtifacts artifacts: 'reports/api-test-report.html', fingerprint: true
             }
         }
     }
+
     post {
-        always {
-            echo 'Pipeline finished. Review Newman output in the console.'
+        success {
+            echo 'SUCCESS: Pipeline completed!'
+        }
+        failure {
+            echo 'FAILURE: Check Console Output'
         }
     }
 }
