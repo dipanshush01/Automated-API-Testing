@@ -25,7 +25,7 @@ pipeline {
         stage('Start API Server') {
             steps {
                 bat 'start "API Server" /B cmd /c "npm start"'
-                bat 'timeout /t 10 /nobreak'
+                bat 'ping 127.0.0.1 -n 11 > nul'
             }
         }
 
